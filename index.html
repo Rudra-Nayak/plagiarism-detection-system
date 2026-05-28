@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algorithmic Plagiarism Checker</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Custom Styles for Scrollbars and Custom Overrides -->
+    <style>
+        body {
+            background-color: #030712; /* slate-950 */
+            color: #f3f4f6; /* slate-100 */
+        }
+        /* Custom scrollbar styling for textareas */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0f19;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+    </style>
+</head>
+<body class="min-h-screen relative font-sans overflow-x-hidden selection:bg-indigo-500/30 selection:text-indigo-200">
+
+    <!-- Decorative Gradient Blobs -->
+    <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-500/10 blur-[120px] pointer-events-none"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-purple-500/10 blur-[120px] pointer-events-none"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+        
+        <!-- Header Zone -->
+        <header class="mb-10 text-center md:text-left flex flex-col md:flex-row md:items-center md:justify-between border-b border-slate-800/80 pb-6">
+            <div>
+                <h1 class="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-400 via-indigo-300 to-blue-400 bg-clip-text text-transparent">
+                    Algorithmic Plagiarism Checker
+                </h1>
+                <p class="text-slate-400 text-sm mt-1">
+                    State-of-the-art string matching KMP algorithms & custom DSA vector analysis
+                </p>
+            </div>
+            <div class="mt-4 md:mt-0 flex items-center justify-center space-x-2 bg-slate-900/60 backdrop-blur-md px-4 py-2 border border-slate-800 rounded-xl">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span class="text-xs font-medium text-slate-300 uppercase tracking-wider">Engine: Java 8080 Active</span>
+            </div>
+        </header>
+
+        <!-- Main Workspace Grid -->
+        <main class="space-y-8">
+
+            <!-- Input Workspace -->
+            <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+                <!-- Left Panel: Original Document -->
+                <div class="flex flex-col bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-5 shadow-xl transition-all hover:border-slate-700/50">
+                    <div class="flex items-center justify-between mb-3">
+                        <label for="sourceText" class="text-sm font-semibold text-indigo-400 flex items-center space-x-2">
+                            <span>📄 Original Source Document</span>
+                        </label>
+                        <span class="text-xs text-slate-500" id="sourceWordCount">0 words</span>
+                    </div>
+                    <textarea id="sourceText" name="sourceText" 
+                        class="flex-1 w-full min-h-[220px] bg-slate-950/70 border border-slate-800 rounded-xl p-4 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent transition-all font-mono resize-y" 
+                        placeholder="Paste the reference/original document content here..."
+                        oninput="updateCount('sourceText', 'sourceWordCount')"></textarea>
+                </div>
+
+                <!-- Right Panel: Suspicious Document -->
+                <div class="flex flex-col bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-5 shadow-xl transition-all hover:border-slate-700/50">
+                    <div class="flex items-center justify-between mb-3">
+                        <label for="suspiciousText" class="text-sm font-semibold text-purple-400 flex items-center space-x-2">
+                            <span>🔍 Suspicious Text to Analyze</span>
+                        </label>
+                        <span class="text-xs text-slate-500" id="suspiciousWordCount">0 words</span>
+                    </div>
+                    <textarea id="suspiciousText" name="suspiciousText" 
+                        class="flex-1 w-full min-h-[220px] bg-slate-950/70 border border-slate-800 rounded-xl p-4 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all font-mono resize-y" 
+                        placeholder="Paste the document suspected of plagiarism here..."
+                        oninput="updateCount('suspiciousText', 'suspiciousWordCount')"></textarea>
+                </div>
+            </section>
+
+            <!-- Center Control Section -->
+            <div class="flex flex-col items-center justify-center py-2">
+                <button id="analyzeBtn" onclick="runAnalysis()" 
+                    class="relative group px-8 py-4 bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-indigo-500/25 hover:scale-[1.03] active:scale-[0.98] transition-all duration-300 flex items-center space-x-3 overflow-hidden cursor-pointer">
+                    <!-- Glow effect -->
+                    <span class="absolute inset-0 w-full h-full bg-gradient-to-r from-violet-500 via-indigo-500 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10"></span>
+                    <span id="btnText">⚡ Run Analysis Engine</span>
+                    <svg id="btnSpinner" class="hidden animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Error Banner -->
+            <div id="errorBanner" class="hidden max-w-3xl mx-auto bg-red-950/40 border border-red-900/60 text-red-200 px-5 py-4 rounded-xl shadow-lg flex items-start space-x-3">
+                <span class="text-xl">⚠️</span>
+                <div>
+                    <h4 class="font-bold text-sm">Server Unreachable</h4>
+                    <p class="text-xs text-red-400 mt-0.5">Please ensure your Java AppServer is compiled and running on port 8080. Start the server and try again.</p>
+                </div>
+            </div>
+
+            <!-- Dashboard Results Area (Grid + Highlights) -->
+            <section id="resultsSection" class="space-y-8 opacity-40 pointer-events-none transition-all duration-300">
+                
+                <!-- Performance Metrics Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    
+                    <!-- Card 1: Similarity Score Wheel -->
+                    <div class="relative overflow-hidden bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 shadow-xl flex flex-col items-center justify-between min-h-[220px]">
+                        <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-widest text-center self-start mb-2">Similarity Index</h3>
+                        
+                        <!-- SVG Circular Progress Ring -->
+                        <div class="relative flex items-center justify-center my-2">
+                            <svg class="w-32 h-32 transform -rotate-90">
+                                <defs>
+                                    <linearGradient id="wheelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stop-color="#a78bfa" /> <!-- purple-400 -->
+                                        <stop offset="50%" stop-color="#6366f1" /> <!-- indigo-500 -->
+                                        <stop offset="100%" stop-color="#3b82f6" /> <!-- blue-500 -->
+                                    </linearGradient>
+                                </defs>
+                                <!-- Outer Track -->
+                                <circle cx="64" cy="64" r="50" class="stroke-slate-800/60 fill-none" stroke-width="8" />
+                                <!-- Animated Indicator -->
+                                <circle id="progressCircle" cx="64" cy="64" r="50" 
+                                    stroke="url(#wheelGrad)" stroke-width="8" class="fill-none transition-all duration-1000 ease-out" 
+                                    stroke-dasharray="314.16" stroke-dashoffset="314.16" stroke-linecap="round" />
+                            </svg>
+                            <div class="absolute text-center">
+                                <span id="similarityPercentage" class="text-2xl font-bold font-mono">0.00</span>
+                                <span class="text-xs text-slate-400 block">% Match</span>
+                            </div>
+                        </div>
+                        
+                        <p class="text-xs text-slate-500 text-center mt-2">Cosine similarity calculated on token frequency vectors</p>
+                    </div>
+
+                    <!-- Card 2: Execution Speed -->
+                    <div class="bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 shadow-xl flex flex-col justify-between min-h-[220px]">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-widest">Execution Speed</h3>
+                            <span class="text-xs text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">Fast</span>
+                        </div>
+                        
+                        <div class="my-4">
+                            <div class="flex items-baseline space-x-1">
+                                <span id="executionTime" class="text-5xl font-extrabold font-mono text-slate-100">0.0000</span>
+                                <span class="text-sm font-semibold text-slate-400">ms</span>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-2">Measured with microsecond resolution using JVM nanotimer.</p>
+                        </div>
+                        
+                        <div class="text-[11px] text-slate-500 border-t border-slate-800/80 pt-3 flex items-center justify-between">
+                            <span>Processors: Native JDK</span>
+                            <span id="timerIndicator">0 ms</span>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: DSA Metrics -->
+                    <div class="bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 shadow-xl flex flex-col justify-between min-h-[220px]">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-widest">DSA Custom Metrics</h3>
+                            <span class="text-xs text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full">Custom DS</span>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <span class="text-[11px] text-slate-400 block mb-1">Hash collisions encountered:</span>
+                                <div class="flex items-center justify-between">
+                                    <span id="collisionsCount" class="text-2xl font-bold font-mono text-amber-400">0</span>
+                                    <span class="text-xs text-slate-500">Separate Chaining</span>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="text-[11px] text-slate-400 block mb-1">Total word tokens mapped:</span>
+                                <div class="flex items-center justify-between">
+                                    <span id="tokensMapped" class="text-2xl font-bold font-mono text-slate-300">0</span>
+                                    <span class="text-xs text-slate-500">Stop words filtered</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-[11px] text-slate-500 border-t border-slate-800/80 pt-3">
+                            No HashMap or HashSet used in analysis.
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Interactive Text Visualizer -->
+                <div class="bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 shadow-xl">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-800 pb-4 mb-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-200">Analyzed Document Overlay</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Below is the suspicious document. Neon-tinted segments indicate exact KMP matches.</p>
+                        </div>
+                        <div id="matchSummary" class="text-xs text-slate-400 font-mono mt-2 sm:mt-0 bg-slate-950/70 border border-slate-800 px-3 py-1.5 rounded-lg">
+                            Matches detected: 0 spans
+                        </div>
+                    </div>
+                    
+                    <!-- Overlay container -->
+                    <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-5 min-h-[160px] max-h-[400px] overflow-y-auto font-mono text-sm leading-relaxed whitespace-pre-wrap select-text" id="visualizerContent">
+                        Paste texts above and run analysis to populate visualizer.
+                    </div>
+                </div>
+
+            </section>
+        </main>
+        
+        <!-- Footer -->
+        <footer class="mt-16 text-center text-xs text-slate-600 border-t border-slate-900 pt-6">
+            <p>Plagiarism Detection System • Pure Java Backend & Tailwind Dashboard</p>
+        </footer>
+    </div>
+
+    <!-- Floating Interactive Tooltip -->
+    <div id="matchTooltip" class="absolute hidden bg-slate-950 border border-slate-800 text-slate-200 text-xs px-3.5 py-2.5 rounded-xl shadow-2xl pointer-events-none z-50 transition-all duration-150 max-w-sm">
+        <div class="font-bold text-rose-400 flex items-center space-x-1 mb-1">
+            <span>⚡ Plagiarism Detected</span>
+        </div>
+        <div id="tooltipContent" class="text-slate-300 font-mono leading-normal">
+            Matched in source text starting at character X.
+        </div>
+    </div>
+
+    <!-- Scripting logic -->
+    <script>
+        // Track response data globally to lookup match phrases if needed
+        let globalMatches = [];
+
+        // Simple live word counter
+        function updateCount(textareaId, counterId) {
+            const text = document.getElementById(textareaId).value;
+            if (!text || text.trim() === '') {
+                document.getElementById(counterId).innerText = "0 words";
+                return;
+            }
+            const cleanText = text.trim();
+            // Count words by splitting on whitespaces
+            const words = cleanText.split(/\s+/);
+            document.getElementById(counterId).innerText = `${words.length} words`;
+        }
+
+        // Trigger analysis via HTTP POST
+        async function runAnalysis() {
+            const sourceText = document.getElementById('sourceText').value;
+            const suspiciousText = document.getElementById('suspiciousText').value;
+
+            if (!sourceText.trim() || !suspiciousText.trim()) {
+                alert("Please fill in both textareas before starting the analysis.");
+                return;
+            }
+
+            // UI loading states
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const btnText = document.getElementById('btnText');
+            const btnSpinner = document.getElementById('btnSpinner');
+            const errorBanner = document.getElementById('errorBanner');
+            const resultsSection = document.getElementById('resultsSection');
+
+            // Reset UI
+            errorBanner.classList.add('hidden');
+            analyzeBtn.disabled = true;
+            btnText.innerText = "Analyzing Texts...";
+            btnSpinner.classList.remove('hidden');
+            
+            // Show results section as active but fading/pulse while loading
+            resultsSection.classList.remove('opacity-40', 'pointer-events-none');
+            resultsSection.classList.add('animate-pulse');
+
+            // Add skeleton loaders on output panels
+            document.getElementById('similarityPercentage').innerText = "...";
+            document.getElementById('executionTime').innerText = "...";
+            document.getElementById('collisionsCount').innerText = "...";
+            document.getElementById('tokensMapped').innerText = "...";
+            document.getElementById('visualizerContent').innerHTML = "<div class='text-slate-500 py-8 text-center'>KMP searching and calculating cosine vectors...</div>";
+
+            try {
+                const response = await fetch('http://localhost:8080/api/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        sourceText: sourceText,
+                        suspiciousText: suspiciousText
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server returned HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                // End loading states
+                resultsSection.classList.remove('animate-pulse');
+                
+                // Populate Dashboard Metrics
+                animateSimilarityWheel(data.similarityScore);
+                
+                document.getElementById('executionTime').innerText = data.executionTimeMs.toFixed(4);
+                document.getElementById('timerIndicator').innerText = `${data.executionTimeMs.toFixed(2)} ms`;
+                document.getElementById('collisionsCount').innerText = data.collisions;
+                document.getElementById('tokensMapped').innerText = data.tokensMapped;
+
+                // Render Overlay Highlights
+                globalMatches = data.matches;
+                renderHighlightedOutput(suspiciousText, data.matches);
+
+            } catch (err) {
+                console.error("Analysis failed:", err);
+                
+                // Reset loading button
+                resultsSection.classList.add('opacity-40', 'pointer-events-none');
+                resultsSection.classList.remove('animate-pulse');
+                errorBanner.classList.remove('hidden');
+                
+                document.getElementById('similarityPercentage').innerText = "0.00";
+                document.getElementById('executionTime').innerText = "0.0000";
+                document.getElementById('collisionsCount').innerText = "0";
+                document.getElementById('tokensMapped').innerText = "0";
+                document.getElementById('visualizerContent').innerText = "Paste texts above and run analysis to populate visualizer.";
+            } finally {
+                // Restore button state
+                analyzeBtn.disabled = false;
+                btnText.innerText = "Run Analysis Engine";
+                btnSpinner.classList.add('hidden');
+            }
+        }
+
+        // SVG stroke animation for percentage wheel
+        function animateSimilarityWheel(score) {
+            const scoreSpan = document.getElementById('similarityPercentage');
+            const circle = document.getElementById('progressCircle');
+            
+            // Animate progress wheel count
+            let start = 0;
+            const end = score;
+            const duration = 1000; // ms
+            const stepTime = 15;
+            const steps = duration / stepTime;
+            const increment = end / steps;
+
+            let timer = setInterval(() => {
+                start += increment;
+                if (start >= end) {
+                    clearInterval(timer);
+                    scoreSpan.innerText = end.toFixed(2);
+                } else {
+                    scoreSpan.innerText = start.toFixed(2);
+                }
+            }, stepTime);
+
+            // Animate SVG path dashoffset (circumference = 314.16)
+            const circumference = 314.16;
+            const offset = circumference - (score / 100) * circumference;
+            circle.style.strokeDashoffset = offset;
+        }
+
+        // Merges overlapping matches to form contiguous highlighted spans
+        function mergeOverlappingSpans(matches) {
+            if (!matches || matches.length === 0) return [];
+            
+            // Sort matches by suspiciousStart ascending
+            const sorted = [...matches].sort((a, b) => a.suspiciousStart - b.suspiciousStart);
+            
+            const merged = [];
+            let current = {
+                suspiciousStart: sorted[0].suspiciousStart,
+                suspiciousEnd: sorted[0].suspiciousEnd,
+                sourceStarts: [sorted[0].sourceStart],
+                sourceEnds: [sorted[0].sourceEnd]
+            };
+            
+            for (let i = 1; i < sorted.length; i++) {
+                const next = sorted[i];
+                if (next.suspiciousStart <= current.suspiciousEnd) {
+                    // Overlap: merge bounds and accumulate source bounds
+                    current.suspiciousEnd = Math.max(current.suspiciousEnd, next.suspiciousEnd);
+                    current.sourceStarts.push(next.sourceStart);
+                    current.sourceEnds.push(next.sourceEnd);
+                } else {
+                    merged.push(current);
+                    current = {
+                        suspiciousStart: next.suspiciousStart,
+                        suspiciousEnd: next.suspiciousEnd,
+                        sourceStarts: [next.sourceStart],
+                        sourceEnds: [next.sourceEnd]
+                    };
+                }
+            }
+            merged.push(current);
+            return merged;
+        }
+
+        // Inject highlights into suspicious text in reverse order (to protect indices)
+        function renderHighlightedOutput(originalText, matches) {
+            const container = document.getElementById('visualizerContent');
+            const summary = document.getElementById('matchSummary');
+            
+            if (!matches || matches.length === 0) {
+                container.innerText = originalText;
+                summary.innerText = "Matches detected: 0 spans";
+                return;
+            }
+
+            summary.innerText = `Matches detected: ${matches.length} spans`;
+
+            // Merge overlapping spans for continuous visual highlighting
+            const mergedSpans = mergeOverlappingSpans(matches);
+
+            // Sort merged spans descending by start index to make index replacements robust
+            const sortedSpans = mergedSpans.sort((a, b) => b.suspiciousStart - a.suspiciousStart);
+
+            let htmlContent = originalText;
+
+            for (let i = 0; i < sortedSpans.length; i++) {
+                const span = sortedSpans[i];
+                const before = htmlContent.substring(0, span.suspiciousStart);
+                const matchedStr = htmlContent.substring(span.suspiciousStart, span.suspiciousEnd);
+                const after = htmlContent.substring(span.suspiciousEnd);
+
+                // Prepare tooltip parameters
+                const minSourceStart = Math.min(...span.sourceStarts);
+                const maxSourceEnd = Math.max(...span.sourceEnds);
+
+                // Build neon highlighters
+                const tag = `<span class="relative inline-block cursor-pointer bg-red-500/20 text-red-300 border-b-2 border-red-500/60 hover:bg-red-500/40 rounded px-1 py-0.5 transition-colors duration-200 match-highlight" onmouseenter="hoverTooltip(event, ${minSourceStart}, ${maxSourceEnd})" onmouseleave="hideTooltip()">${escapeHtml(matchedStr)}</span>`;
+                
+                htmlContent = before + tag + after;
+            }
+
+            container.innerHTML = htmlContent;
+        }
+
+        // Utility to escape HTML entities
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Floating tooltip triggers
+        function hoverTooltip(event, sourceStart, sourceEnd) {
+            const tooltip = document.getElementById('matchTooltip');
+            const content = document.getElementById('tooltipContent');
+            
+            content.innerHTML = `This segment matches characters <strong class="text-indigo-400 font-mono">${sourceStart}–${sourceEnd}</strong> in the Original Source Document.`;
+            
+            tooltip.classList.remove('hidden');
+            
+            // Position the tooltip nicely above the hovered span
+            const rect = event.target.getBoundingClientRect();
+            
+            tooltip.style.left = `${rect.left + window.scrollX + (rect.width / 2) - (tooltip.offsetWidth / 2)}px`;
+            tooltip.style.top = `${rect.top + window.scrollY - tooltip.offsetHeight - 12}px`;
+        }
+
+        function hideTooltip() {
+            const tooltip = document.getElementById('matchTooltip');
+            tooltip.classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
